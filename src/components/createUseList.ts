@@ -50,19 +50,24 @@ export default function createUseList<Models, IdType, ListMetaTypes>(
 ) {
   return function useList<const ModelName extends keyof Models>(
     model: ModelName,
-    options: OptionsType<Models, ModelName, IdType> = {}
+    options: OptionsType<
+      Models,
+      ModelName,
+      Models[ModelName] extends { id: infer I } ? I : IdType
+    > = {}
   ) {
     type ItemType = Models[ModelName];
+    type ModelId = Models[ModelName] extends { id: infer I } ? I : IdType;
 
     // @ts-ignore
     type ListMetaType = ListMetaTypes[ModelName];
 
     const store = stores[model]();
     const cacheStore = cache();
-    const ids = ref([] as IdType[]);
+    const ids = ref([] as ModelId[]);
     const meta = ref(
       {} as {
-        nextCursor?: IdType;
+        nextCursor?: ModelId;
         page: number;
         pages: number;
         results: number;
@@ -237,7 +242,7 @@ export default function createUseList<Models, IdType, ListMetaTypes>(
      */
 
     // Push id
-    const pushId = (id: IdType) => {
+    const pushId = (id: ModelId) => {
       ids.value = [...ids.value, id as any];
     };
 

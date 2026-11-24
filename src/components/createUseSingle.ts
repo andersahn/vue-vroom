@@ -31,7 +31,7 @@ export default function createUseSingle<Models, IdType>(
 ) {
   return function useSingle<const ModelName extends keyof Models>(
     model: ModelName,
-    id: R<IdType>,
+    id: R<Models[ModelName] extends { id: infer I } ? I : IdType>,
     options: OptionsType<Models, ModelName> = {}
   ) {
     type ItemType = Models[ModelName];

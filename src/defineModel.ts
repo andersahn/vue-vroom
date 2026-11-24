@@ -43,7 +43,8 @@ export default function defineModel<
   ItemActions extends IA<SchemaType<Schema>>,
   const Singleton,
   const Includable,
-  const ListMeta
+  const ListMeta,
+  const IdsAreNumbers extends boolean | undefined = undefined
 >({
   schema,
   belongsTo,
@@ -52,6 +53,7 @@ export default function defineModel<
   singleton,
   includable,
   listMeta,
+  idsAreNumbers,
   ...settings
 }: {
   schema: Schema;
@@ -61,6 +63,8 @@ export default function defineModel<
   singleton?: Singleton;
   includable?: Includable;
   listMeta?: ListMeta;
+  /** Overrides the instance-wide `idsAreNumbers` for this model only */
+  idsAreNumbers?: IdsAreNumbers;
 } & SimpleModelSettings) {
   return {
     schema,
@@ -72,6 +76,7 @@ export default function defineModel<
     includable: includable as Includable,
     listMeta: listMeta as ListMeta,
     metaTypes: {} as SchemaType<ListMeta>,
+    idsAreNumbers: idsAreNumbers as IdsAreNumbers,
     ...settings,
   };
 }

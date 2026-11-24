@@ -429,7 +429,7 @@ export default class Server<DbType, IdentityModel> {
         let value = params.get(k) as any;
         if (
           ['limit', 'page'].includes(k) ||
-          (k === 'cursor' && this.idsAreNumbers)
+          (k === 'cursor' && this.idsAreNumbers && /^\d+$/.test(value))
         ) {
           value = parseInt(value, 10);
         }

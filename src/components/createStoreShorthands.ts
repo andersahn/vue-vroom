@@ -22,7 +22,7 @@ export default function createStoreShortHands<Models, IdType>(stores: any) {
 
     update: <const ModelName extends keyof Models>(
       model: ModelName,
-      id: IdType,
+      id: Models[ModelName] extends { id: infer I } ? I : IdType,
       data: PostData<Models[ModelName]>
     ): Promise<Models[ModelName]> => {
       return stores[model]().update(id, data);
@@ -30,14 +30,14 @@ export default function createStoreShortHands<Models, IdType>(stores: any) {
 
     delete: <const ModelName extends keyof Models>(
       model: ModelName,
-      id: IdType
+      id: Models[ModelName] extends { id: infer I } ? I : IdType
     ): Promise<void> => {
       return stores[model]().delete(id);
     },
 
     get: <const ModelName extends keyof Models>(
       model: ModelName,
-      id: IdType,
+      id: Models[ModelName] extends { id: infer I } ? I : IdType,
       settings?: {
         include?: string[];
       }
