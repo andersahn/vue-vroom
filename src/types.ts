@@ -92,70 +92,74 @@ export type Settings = {
   useSnakeCase?: boolean;
 };
 
-type WithBelongsToPostFix<Obj, Id, SnakeCase> = SnakeCase extends true
-  ? {
-      // @ts-expect-error
-      [K in `${keyof Obj}_id`]: Id;
-    }
-  : {
-      // @ts-expect-error
-      [K in `${keyof Obj}Id`]: Id;
-    };
+type RelationMap = { [key: string]: () => string };
 
-type WithHasManyPostFix<Obj, Id, SnakeCase> = SnakeCase extends true
-  ? {
-      // @ts-expect-error
-      [K in `${keyof Obj}_ids`]?: Id[];
-    }
-  : {
-      // @ts-expect-error
-      [K in `${keyof Obj}Ids`]?: Id[];
-    };
+type ModelOf<Models, Name> = Name extends keyof Models ? Models[Name] : never;
 
-type RelId<One, Id, SnakeCase> = One extends { [key: string]: () => string }
-  ? WithBelongsToPostFix<One, Id, SnakeCase>
-  : {};
+type Prop<T, K extends string> = T extends { [P in K]: infer V } ? V : never;
 
-type RelIds<Many, Id, SnakeCase> = Many extends { [key: string]: () => string }
-  ? WithHasManyPostFix<Many, Id, SnakeCase>
-  : {};
-
-export type Rels<Many, Models, Id, SnakeCase> = Many extends {
-  [key: string]: () => string;
+/**
+ * The id type of one model: its own `idsAreNumbers` wins, otherwise the
+ * instance-wide default is used.
+ */
+export type IdOf<Models, Name, DefaultId> = ModelOf<Models, Name> extends {
+  idsAreNumbers: true;
 }
+  ? number
+  : ModelOf<Models, Name> extends { idsAreNumbers: false }
+  ? string
+  : DefaultId;
+
+type RelId<One, Models, DefaultId, SnakeCase> = One extends RelationMap
   ? {
-      [K in keyof Many]?: (Id &
-        // @ts-expect-error
-        Models[ReturnType<Many[K]>]['types'] &
-        // @ts-expect-error
-        RelId<Models[ReturnType<Many[K]>]['belongsTo'], Id['id'], SnakeCase>)[];
+      [K in keyof One & string as SnakeCase extends true
+        ? `${K}_id`
+        : `${K}Id`]: IdOf<Models, ReturnType<One[K]>, DefaultId>;
     }
   : {};
 
-export type Rel<One, Models, Id, SnakeCase> = One extends {
-  [key: string]: () => string;
-}
+type RelIds<Many, Models, DefaultId, SnakeCase> = Many extends RelationMap
   ? {
-      [K in keyof One]?: Id &
-        // @ts-expect-error
-        Models[ReturnType<One[K]>]['types'] &
-        // @ts-expect-error
-        RelId<Models[ReturnType<One[K]>]['belongsTo'], Id['id'], SnakeCase>;
+      [K in keyof Many & string as SnakeCase extends true
+        ? `${K}_ids`
+        : `${K}Ids`]?: IdOf<Models, ReturnType<Many[K]>, DefaultId>[];
     }
   : {};
 
-export type FieldTypes<Models, Id, SnakeCase> = {
-  // @ts-expect-error
-  [K in keyof Models]: Models[K]['types'] &
-    Id &
-    // @ts-expect-error
-    Rels<Models[K]['hasMany'], Models, Id, SnakeCase> &
-    // @ts-expect-error
-    Rel<Models[K]['belongsTo'], Models, Id, SnakeCase> &
-    // @ts-expect-error
-    RelId<Models[K]['belongsTo'], Id['id'], SnakeCase> &
-    // @ts-expect-error
-    RelIds<Models[K]['hasMany'], Id['id'], SnakeCase>;
+type Related<Models, Name, DefaultId, SnakeCase> = {
+  id: IdOf<Models, Name, DefaultId>;
+} & Prop<ModelOf<Models, Name>, 'types'> &
+  RelId<Prop<ModelOf<Models, Name>, 'belongsTo'>, Models, DefaultId, SnakeCase>;
+
+export type Rels<Many, Models, DefaultId, SnakeCase> = Many extends RelationMap
+  ? {
+      [K in keyof Many]?: Related<
+        Models,
+        ReturnType<Many[K]>,
+        DefaultId,
+        SnakeCase
+      >[];
+    }
+  : {};
+
+export type Rel<One, Models, DefaultId, SnakeCase> = One extends RelationMap
+  ? {
+      [K in keyof One]?: Related<
+        Models,
+        ReturnType<One[K]>,
+        DefaultId,
+        SnakeCase
+      >;
+    }
+  : {};
+
+export type FieldTypes<Models, Id extends { id: ID }, SnakeCase> = {
+  [K in keyof Models]: Prop<Models[K], 'types'> & {
+    id: IdOf<Models, K, Id['id']>;
+  } & Rels<Prop<Models[K], 'hasMany'>, Models, Id['id'], SnakeCase> &
+    Rel<Prop<Models[K], 'belongsTo'>, Models, Id['id'], SnakeCase> &
+    RelId<Prop<Models[K], 'belongsTo'>, Models, Id['id'], SnakeCase> &
+    RelIds<Prop<Models[K], 'hasMany'>, Models, Id['id'], SnakeCase>;
 };
 
 export type IdType<IdSettings> = IdSettings extends { idsAreNumbers: true }

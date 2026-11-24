@@ -438,7 +438,7 @@ type Database<Models> = {
   [K in keyof Models]: Collection<Models[K]>;
 };
 
-export type VroomDb<Models, ModelId, SnakeCase> = Database<
+export type VroomDb<Models, ModelId extends ID, SnakeCase> = Database<
   FieldTypes<Models, { id: ModelId }, SnakeCase>
 >;
 
@@ -462,7 +462,7 @@ export default function createDb<ModelTypes>(options: any) {
       (value as any).belongsTo,
       (value as any).hasMany,
       (value as any).inverse,
-      idsAreNumbers,
+      (value as any).idsAreNumbers ?? idsAreNumbers,
       settings.idFactory,
       db
     );
