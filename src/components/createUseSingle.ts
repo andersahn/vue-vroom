@@ -10,7 +10,7 @@ import useFetchState from '../useFetchState';
 import unwrap from './unwrap';
 import helper from '../helper';
 
-export type R<T> = T | Ref<T | undefined> | ComputedRef<T | undefined>;
+type R<T> = T | Ref<T | undefined> | ComputedRef<T | undefined>;
 
 type IncludeType<Models, Model extends keyof Models> = Array<
   keyof Models[Model]
@@ -49,7 +49,6 @@ export default function createUseSingle<Models, IdType>(
     const path = computed(() => (options.path ? unwrap(options.path) : null));
 
     const autoFetch = computed(() => {
-      if (!singleId.value) return false;
       if (options.lazy) return false;
       if (options.preferCache) {
         if (!!store.single(singleId.value)) return false;
@@ -114,11 +113,9 @@ export default function createUseSingle<Models, IdType>(
       ...modelSettings.belongsTo,
     }));
 
-    const item = computed<ItemType | null>(() => {
-      if (!singleId.value) return null;
-      const stored = store.single(singleId.value);
-      if (!stored) return null;
-      const item = { ...stored };
+    const item = computed<ItemType>(() => {
+      // TODO return null if not loaded yet?
+      const item = { ...store.single(singleId.value) };
       include.value.forEach((rel: string) => {
         const hasMany = rel in modelSettings.hasMany;
         const relStore = stores[relations.value[rel]()]();

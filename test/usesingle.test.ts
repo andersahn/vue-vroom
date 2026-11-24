@@ -1,9 +1,8 @@
 import { mount } from '@vue/test-utils';
 import { createVroom, defineModel } from '.';
 import { beforeEach, describe, it, expect } from 'vitest';
-import { createApp, defineComponent, ref, type Ref } from 'vue';
+import { createApp, defineComponent } from 'vue';
 import { createPinia } from 'pinia';
-import { R } from '../src/components/createUseSingle';
 
 const app = createApp({});
 const vroom = createVroom({
@@ -49,7 +48,7 @@ const TestComponent = defineComponent({
       default: {},
     },
     id: {
-      type: [String, Object] as unknown as () => R<string>,
+      type: String,
       required: true,
     },
   },
@@ -63,7 +62,7 @@ const TestComponent = defineComponent({
   template: '<div></div>',
 });
 
-function getWrapper(model: string, id: R<string>, settings = {}) {
+function getWrapper(model: string, id: string, settings = {}) {
   return mount(TestComponent, {
     props: {
       model,
@@ -139,22 +138,5 @@ describe('Use single', () => {
     const wrapper = getWrapper('book', '1', { preferCache: true });
 
     expect(wrapper.vm.isLoading).toBe(false);
-  });
-
-  it('Does not load if id is undefined', async () => {
-    const id = ref(undefined as string | undefined);
-    const wrapper = getWrapper('book', id);
-
-    expect(wrapper.vm.isLoading).toBe(false);
-  });
-
-  it('Triggers load if id goes from undefined to defined', async () => {
-    const id = ref(undefined as string | undefined);
-    const wrapper = getWrapper('book', id);
-
-    id.value = '1';
-    await new Promise((r) => setTimeout(r, 0));
-
-    expect(wrapper.vm.isLoading).toBe(true);
   });
 });
